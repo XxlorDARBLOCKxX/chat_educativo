@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Thunder Fox</title>
+
+<style>
+body{
+margin:0;
+display:flex;
+flex-direction:column;
+font-family:Arial;
+color:white;
+
+/* ✅ FONDO CORRECTO SIN SERVIDOR */
+background:url("../static/fondo.jpg") no-repeat center center fixed;
+background-size:cover;
+}
+
+body::before{
+content:"";
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.65);
+z-index:-1;
+}
+
+/* HEADER */
+#header{
+text-align:center;
+padding:15px;
+font-size:28px;
+font-weight:bold;
+background:rgba(0,0,0,0.6);
+}
+
+/* CONTENEDOR */
+#container{
+display:flex;
+flex:1;
+}
+
+/* SIDEBAR */
+#sidebar{
+width:260px;
+background:rgba(0,0,0,0.7);
+padding:15px;
+display:flex;
+flex-direction:column;
+}
+
+#logo{
+width:80px;
+height:80px;
+border-radius:50%;
+margin:auto;
+margin-bottom:10px;
+}
+
+/* BUSCADOR */
+#buscar{
+padding:10px;
+border-radius:10px;
+border:none;
+margin-bottom:10px;
+}
+
+/* CHATS */
+.chat-item{
+padding:10px;
+margin:5px 0;
+border-radius:10px;
+cursor:pointer;
+background:rgba(255,255,255,0.05);
+transition:0.2s;
+}
+
+.chat-item:hover{
+background:#f59e0b;
+color:black;
+}
+
+/* BOTONES */
+#sidebar button{
+margin-top:10px;
+padding:10px;
+border:none;
+border-radius:10px;
+background:#f59e0b;
+cursor:pointer;
+}
+
+/* CHAT */
+#chat{
+flex:1;
+padding:20px;
+overflow:auto;
+}
+
+/* MENSAJES */
+.msg{
+display:flex;
+align-items:flex-end;
+margin:10px 0;
+}
+
+.ia{justify-content:flex-start;}
+.user{justify-content:flex-end;}
+
+.avatar{
+width:35px;
+height:35px;
+border-radius:50%;
+}
+
+.ia .avatar{margin-right:10px;}
+.user .avatar{margin-left:10px;order:2;}
+
+.bubble{
+padding:10px;
+border-radius:10px;
+max-width:70%;
+}
+
+.user .bubble{background:#2563eb;}
+.ia .bubble{background:rgba(255,255,255,0.1);}
+
+.copy{
+font-size:12px;
+cursor:pointer;
+opacity:0.7;
+}
+
+/* INPUT */
+#input-area{
+position:fixed;
+bottom:20px;
+left:50%;
+transform:translateX(-50%);
+width:60%;
+max-width:800px;
+display:flex;
+box-shadow:0 0 20px rgba(0,0,0,0.5);
+}
+
+#mensaje{
+flex:1;
+padding:15px;
+border-radius:20px;
+border:none;
+}
+
+button{
+margin-left:10px;
+padding:15px;
+border-radius:20px;
+border:none;
+background:#f59e0b;
+cursor:pointer;
+}
+
+.typing{
+font-style:italic;
+opacity:0.7;
+animation:blink 1s infinite;
+}
+
+@keyframes blink{
+0%{opacity:0.3;}
+50%{opacity:1;}
+100%{opacity:0.3;}
+}
+</style>
+</head>
+
+<body>
+
+<div id="header">Thunder Fox</div>
+
+<div id="container">
+
+<div id="sidebar">
+<img id="logo" src="../static/imagen zorro.jpg">
+
+<input id="buscar" placeholder="Buscar chat...">
+
+<div id="lista"></div>
+
+<button onclick="nuevoChat()">Nuevo Chat</button>
+<button onclick="limpiar()">Limpiar historial</button>
+</div>
+
+<div id="chat"></div>
+
+<div id="input-area">
+<input id="mensaje" placeholder="Escribe...">
+<button onclick="enviar()">Enviar</button>
+</div>
+
+</div>
+
+<script>
+let chatActual="default";
+let todosChats={};
+
+document.getElementById("mensaje").addEventListener("keydown",e=>{
+if(e.key==="Enter"){enviar();}
+});
+
+document.getElementById("buscar").addEventListener("input",function(){
+let texto=this.value.toLowerCase();
+let lista=document.getElementById("lista");
+[...lista.children].forEach(c=>{
+c.style.display=c.innerText.toLowerCase().includes(texto)?"block":"none";
+});
+});
+
+function cargarLista(chats){
+todosChats=chats;
+let lista=document.getElementById("lista");
+lista.innerHTML="";
+Object.keys(chats).forEach(c=>{
+lista.innerHTML+=`<div class="chat-item">${c}</div>`;
+});
+}
+
+function msgHTML(tipo,texto,copy=false){
+let avatar = tipo==="ia"
+? "../static/imagen zorro.jpg"
+: "../static/usuario.jpg";
+
+return `
+<div class="msg ${tipo}">
+<img class="avatar" src="${avatar}">
+<div>
+<div class="bubble">${texto}</div>
+${copy?`<div class="copy" onclick="copiar(this)">Copiar</div>`:""}
+</div>
+</div>`;
+}
+
+function copiar(btn){
+let text=btn.previousElementSibling.innerText;
+navigator.clipboard.writeText(text);
+btn.innerText="Copiado";
+}
+
+function nuevoChat(){
+chatActual="chat_"+Date.now();
+document.getElementById("chat").innerHTML="";
+}
+
+function limpiar(){
+document.getElementById("chat").innerHTML="";
+document.getElementById("lista").innerHTML="";
+}
+
+/* SIMULACIÓN IA LOCAL (SIN BACKEND) */
+function enviar(){
+let msg=document.getElementById("mensaje").value;
+if(!msg)return;
+
+let chat=document.getElementById("chat");
+
+chat.innerHTML+=msgHTML("user",msg);
+
+chat.innerHTML+=`
+<div class="msg ia" id="typing">
+<img class="avatar" src="../static/imagen zorro.jpg">
+<div class="bubble typing">Escribiendo...</div>
+</div>`;
+
+chat.scrollTop=chat.scrollHeight;
+
+setTimeout(()=>{
+document.getElementById("typing").remove();
+
+let respuesta="🤖 Respuesta de prueba: " + msg;
+
+chat.innerHTML+=msgHTML("ia",respuesta,true);
+chat.scrollTop=chat.scrollHeight;
+},1000);
+
+document.getElementById("mensaje").value="";
+}
+</script>
+
+</body>
+</html>
